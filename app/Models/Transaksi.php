@@ -19,6 +19,10 @@ class Transaksi extends Model
         'waktu_transaksi',
         'total_bayar',
         'nomor_meja',
+        'kasir_id',
+        'total_harga',
+        'total_jumlah_pesanan',
+        'kembalian',
     ];
 
     /**
@@ -33,5 +37,10 @@ class Transaksi extends Model
     public function kasir()
     {
         return $this->belongsTo(User::class, "id", "kasir_id");
+    }
+
+    public function transaksi_detail()
+    {
+        return $this->hasMany(TransaksiDetail::class, "transaksi_id", "id");
     }
 }

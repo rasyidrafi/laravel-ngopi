@@ -19,7 +19,7 @@ class CreateTransaksisTable extends Migration
             $table->foreign("kasir_id")->references("id")->on("users");
             $table->dateTime("waktu_transaksi")->default(now());
             $table->integer("total_harga");
-            $table->integer("total_menu");
+            $table->integer("total_jumlah_pesanan");
             $table->integer("total_bayar");
             $table->integer("kembalian")->default(0);
             $table->integer("nomor_meja");

@@ -32,7 +32,17 @@ class TransaksiController extends Controller
      */
     public function detail(Request $request, $id)
     {
+        if(!isset($id)) return response()->json([
+            "status" => "error",
+            "message" => "id param is required",
+        ], 400);
+
         $transaksi = Transaksi::find($id);
+
+        if (!$transaksi) return response()->json([
+            "status" => "error",
+            "message" => "transaksi not found",
+        ], 404);
 
         if ($transaksi->kasir_id != $request->user->id) {
             return response()->json([
@@ -41,8 +51,14 @@ class TransaksiController extends Controller
             ], 403);
         }
 
-        $data = $transaksi;
-        $data->detail = null;
+        $transaksi->menu = $transaksi->transaksi_detail->map(function ($item) {
+            $data = array_merge($item->menu->toArray(), $item->toArray());
+            $data["subtotal"] = $data["price"] * $data["jumlah"];
+            unset($data["menu"]);
+            return $data;
+        });
+
+        unset($transaksi->transaksi_detail);
 
         return response()->json([
             "status" => "success",
@@ -67,11 +83,32 @@ class TransaksiController extends Controller
         $data = $request->only(["total_bayar", "nomor_meja"]);
         $data["kasir_id"] = $request->user->id;
         $data['total_harga'] = 0;
-
+        $data["total_jumlah_pesanan"] = 0;
         $menuHolder = [];
-        foreach ($request->menu as $menu_id) {
-            $menu = Menu::find($menu_id);
-            $data['total_harga'] += $menu->harga;
+
+        foreach ($request->menu as $menu_data) {
+            if(!array_key_exists("id", $menu_data)) return response()->json([
+                "status" => "error",
+                "message" => "Menu id is required",
+            ], 400);
+
+            $menu = Menu::find($menu_data["id"]);
+            if (!$menu) return response()->json([
+                "status" => "error",
+                "message" => "Menu not found",
+            ], 404);
+
+            if(!array_key_exists("jumlah", $menu_data) || $menu_data["jumlah"] <= 0) {
+                return response()->json([
+                    "status" => "error",
+                    "message" => "Jumlah menu harus lebih dari 0",
+                ], 400);
+            }
+
+            $data["total_jumlah_pesanan"] += $menu_data["jumlah"];
+            $data['total_harga'] += ($menu->price * $menu_data["jumlah"]);
+            $menu->jumlah = $menu_data["jumlah"];
+            $menu->subtotal = $menu->price * $menu_data["jumlah"];
             $menuHolder[] = $menu;
         }
 
@@ -86,20 +123,15 @@ class TransaksiController extends Controller
 
         $transaksi = Transaksi::create($data);
 
-        foreach ($request->menu as $menu_id) {
+        foreach ($request->menu as $menu_data) {
             TransaksiDetail::create([
                 "transaksi_id" => $transaksi->id,
-                "menu_id" => $menu_id,
+                "menu_id" => $menu_data["id"],
+                "jumlah" => $menu_data["jumlah"],
             ]);
         }
 
-        unset($data["kasir_id"]);
-        $data["menu"] = $menuHolder;
-
-        return response()->json([
-            "status" => "success",
-            "data" => $data,
-        ]);
+        return $this->detail($request, $transaksi->id);
     }
 
 

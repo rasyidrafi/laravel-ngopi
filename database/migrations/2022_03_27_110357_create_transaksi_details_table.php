@@ -19,6 +19,7 @@ class CreateTransaksiDetailsTable extends Migration
             $table->foreign("transaksi_id")->references("id")->on("transaksis");
             $table->unsignedBigInteger("menu_id");
             $table->foreign("menu_id")->references("id")->on("menus");
+            $table->integer("jumlah");
             $table->timestamps();
         });
     }
