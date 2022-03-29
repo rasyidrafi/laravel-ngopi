@@ -38,6 +38,10 @@ Route::middleware("auth.token")->group(function () {
         // Route::put("/", [App\Http\Controllers\TransaksiController::class, "update"]);
         // Route::delete("/{id}", [App\Http\Controllers\TransaksiController::class, "destroy"]);
     });
+
+    Route::middleware("only.manager")->prefix("transaksi-manager")->group(function() {
+        Route::get("/", [App\Http\Controllers\TransaksiController::class, "index_manager"]);
+    });
 });
 
 // Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

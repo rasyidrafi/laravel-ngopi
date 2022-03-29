@@ -25,6 +25,54 @@ class TransaksiController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function index_manager(Request $request)
+    {
+
+        $data = Transaksi::all();
+
+        $data = $data->map(function ($item, $_) use ($request) {
+
+            $inputName = $request->input("name");
+            $kasirName = $item->kasir->name;
+
+            if ($request->input("name")) {
+                if (strpos($kasirName, $inputName) === false) {
+                    return null;
+                }
+            }
+
+            if ($request->input("tanggal")) {
+                $inputTanggal = $request->input("tanggal");
+                $inputTanggal = date("Y-m-d", strtotime($inputTanggal));
+                $tanggal = $item->waktu_transaksi;
+                $tanggal = date("Y-m-d", strtotime($tanggal));
+
+                if ($inputTanggal != $tanggal) {
+                    return null;
+                }
+            }
+
+            $item->name = $kasirName;
+            unset($item->kasir);
+            return $item;
+        });
+
+        $data = $data->filter(function ($value) {
+            return $value !== null;
+        });
+
+        return response()->json([
+            "status" => "success",
+            "data" => $data,
+        ]);
+    }
+
+    /**
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -32,7 +80,7 @@ class TransaksiController extends Controller
      */
     public function detail(Request $request, $id)
     {
-        if(!isset($id)) return response()->json([
+        if (!isset($id)) return response()->json([
             "status" => "error",
             "message" => "id param is required",
         ], 400);
@@ -87,7 +135,7 @@ class TransaksiController extends Controller
         $menuHolder = [];
 
         foreach ($request->menu as $menu_data) {
-            if(!array_key_exists("id", $menu_data)) return response()->json([
+            if (!array_key_exists("id", $menu_data)) return response()->json([
                 "status" => "error",
                 "message" => "Menu id is required",
             ], 400);
@@ -98,7 +146,7 @@ class TransaksiController extends Controller
                 "message" => "Menu not found",
             ], 404);
 
-            if(!array_key_exists("jumlah", $menu_data) || $menu_data["jumlah"] <= 0) {
+            if (!array_key_exists("jumlah", $menu_data) || $menu_data["jumlah"] <= 0) {
                 return response()->json([
                     "status" => "error",
                     "message" => "Jumlah menu harus lebih dari 0",

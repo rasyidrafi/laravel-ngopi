@@ -31,12 +31,12 @@ class Transaksi extends Model
      * @var array<int, string>
      */
     protected $hidden = [
-        "kasir_id",
+        // "kasir_id",
     ];
 
     public function kasir()
     {
-        return $this->belongsTo(User::class, "id", "kasir_id");
+        return $this->hasOne(User::class, "id", "kasir_id");
     }
 
     public function transaksi_detail()
